@@ -83,6 +83,18 @@ class DataStoreSettingsRepositoryTest {
     }
 
     @Test
+    fun setDisabledPackages_overwritesBatchPackages() = runTest(testDispatcher) {
+        val packages = setOf("com.pkg.a", "com.pkg.b", "com.pkg.c")
+        repository.setDisabledPackages(packages)
+        var settings = repository.getLatestSettings()
+        assertEquals(packages, settings.disabledPackages)
+
+        repository.setDisabledPackages(emptySet())
+        settings = repository.getLatestSettings()
+        assertTrue(settings.disabledPackages.isEmpty())
+    }
+
+    @Test
     fun setServiceEnabled_updatesState() = runTest(testDispatcher) {
         repository.setServiceEnabled(false)
         var settings = repository.getLatestSettings()

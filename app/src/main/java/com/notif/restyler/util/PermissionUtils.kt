@@ -1,5 +1,6 @@
 package com.notif.restyler.util
 
+import android.annotation.SuppressLint
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
@@ -99,6 +100,7 @@ object PermissionUtils {
     /**
      * Creates an Intent to request battery optimization exemption for this app.
      */
+    @SuppressLint("BatteryLife")
     fun createBatteryOptimizationIntent(packageName: String): Intent {
         return Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
             data = Uri.parse("package:$packageName")

@@ -20,6 +20,7 @@ interface SettingsRepository {
     suspend fun setDensity(density: NotificationDensity)
     suspend fun setIconStyle(iconStyle: IconStyle)
     suspend fun toggleAppRestyle(packageName: String, restyle: Boolean)
+    suspend fun setDisabledPackages(packages: Set<String>)
     suspend fun setServiceEnabled(enabled: Boolean)
     suspend fun resetToDefaults()
 }
@@ -77,6 +78,12 @@ class DataStoreSettingsRepository(
                 currentDisabled.add(packageName)
             }
             prefs[SettingsKeys.KEY_DISABLED_PACKAGES] = currentDisabled
+        }
+    }
+
+    override suspend fun setDisabledPackages(packages: Set<String>) {
+        dataStore.edit { prefs ->
+            prefs[SettingsKeys.KEY_DISABLED_PACKAGES] = packages
         }
     }
 

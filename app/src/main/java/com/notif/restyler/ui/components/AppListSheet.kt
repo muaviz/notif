@@ -82,7 +82,11 @@ fun AppListSheet(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "$enabledCount of ${installedApps.size} apps restyled",
+                        text = if (searchQuery.isBlank()) {
+                            "$enabledCount of ${installedApps.size} apps restyled"
+                        } else {
+                            "${installedApps.size} matching apps ($enabledCount restyled)"
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

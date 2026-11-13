@@ -130,19 +130,14 @@ class MainViewModel(
 
     fun restyleAllApps() {
         viewModelScope.launch {
-            val settings = settingsRepository.getLatestSettings()
-            for (pkg in settings.disabledPackages) {
-                settingsRepository.toggleAppRestyle(pkg, restyle = true)
-            }
+            settingsRepository.setDisabledPackages(emptySet())
         }
     }
 
     fun disableAllApps() {
         viewModelScope.launch {
-            val allPkgs = _rawInstalledApps.value.map { it.packageName }
-            for (pkg in allPkgs) {
-                settingsRepository.toggleAppRestyle(pkg, restyle = false)
-            }
+            val allPkgs = _rawInstalledApps.value.map { it.packageName }.toSet()
+            settingsRepository.setDisabledPackages(allPkgs)
         }
     }
 

@@ -1,5 +1,6 @@
 package com.notif.restyler.service
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.service.notification.StatusBarNotification
 import com.notif.restyler.model.RestylerSettings
@@ -16,6 +17,7 @@ object NotificationFilter {
         "com.android.vending"
     )
 
+    @SuppressLint("InlinedApi")
     val SKIPPED_CATEGORIES: Set<String> = setOf(
         Notification.CATEGORY_CALL,
         Notification.CATEGORY_NAVIGATION,
