@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Notification Restyler</string>
+    <string name="service_name">Restyler Notification Listener</string>
+</resources>
