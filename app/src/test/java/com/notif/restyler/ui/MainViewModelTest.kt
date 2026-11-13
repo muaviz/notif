@@ -107,4 +107,42 @@ class MainViewModelTest {
         val enabled = viewModel.uiState.first { it.settings.isServiceEnabled }
         assertTrue(enabled.settings.isServiceEnabled)
     }
+
+    @Test
+    fun setSearchQuery_updatesSearchQuery() = runTest(testDispatcher) {
+        viewModel = createViewModel(backgroundScope)
+        viewModel.setSearchQuery("whatsapp")
+        val updated = viewModel.uiState.first { it.searchQuery == "whatsapp" }
+        assertEquals("whatsapp", updated.searchQuery)
+    }
+
+    @Test
+    fun toggleAppRestyle_updatesDisabledPackages() = runTest(testDispatcher) {
+        viewModel = createViewModel(backgroundScope)
+        // Disabling restyling adds package to disabledPackages
+        viewModel.toggleAppRestyle("com.example.chat", false)
+        val disabled = viewModel.uiState.first {
+            it.settings.disabledPackages.contains("com.example.chat")
+        }
+        assertTrue(disabled.settings.disabledPackages.contains("com.example.chat"))
+
+        // Re-enabling restyling removes package from disabledPackages
+        viewModel.toggleAppRestyle("com.example.chat", true)
+        val reEnabled = viewModel.uiState.first {
+            !it.settings.disabledPackages.contains("com.example.chat")
+        }
+        assertFalse(reEnabled.settings.disabledPackages.contains("com.example.chat"))
+    }
+
+    @Test
+    fun restyleAllApps_clearsDisabledPackages() = runTest(testDispatcher) {
+        viewModel = createViewModel(backgroundScope)
+        viewModel.toggleAppRestyle("com.app.one", false)
+        viewModel.toggleAppRestyle("com.app.two", false)
+        viewModel.uiState.first { it.settings.disabledPackages.size == 2 }
+
+        viewModel.restyleAllApps()
+        val allRestyled = viewModel.uiState.first { it.settings.disabledPackages.isEmpty() }
+        assertTrue(allRestyled.settings.disabledPackages.isEmpty())
+    }
 }

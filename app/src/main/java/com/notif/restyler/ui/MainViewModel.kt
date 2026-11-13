@@ -1,20 +1,29 @@
 package com.notif.restyler.ui
 
 import android.app.Application
+import android.content.pm.PackageManager
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.notif.restyler.RestylerApplication
 import com.notif.restyler.data.SettingsRepository
+import com.notif.restyler.model.AppInfo
 import com.notif.restyler.model.IconStyle
 import com.notif.restyler.model.NotificationDensity
 import com.notif.restyler.service.ServiceStateHolder
 import com.notif.restyler.util.PermissionUtils
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+private data class AppsState(
+    val apps: List<AppInfo> = emptyList(),
+    val query: String = "",
+    val isLoading: Boolean = false
+)
 
 class MainViewModel(
     application: Application,
@@ -30,17 +39,46 @@ class MainViewModel(
         )
     )
 
+    private val _searchQuery = MutableStateFlow("")
+    private val _isLoadingApps = MutableStateFlow(false)
+    private val _rawInstalledApps = MutableStateFlow<List<AppInfo>>(emptyList())
+
+    private val appsStateFlow = combine(
+        _rawInstalledApps,
+        _searchQuery,
+        _isLoadingApps
+    ) { apps, query, isLoading ->
+        AppsState(apps, query, isLoading)
+    }
+
     val uiState: StateFlow<MainUiState> = combine(
         ServiceStateHolder.isConnected,
         settingsRepository.settingsFlow,
-        _permissionState
-    ) { isConnected, settings, (isNotifAccess, isBatteryIgnored, isPostNotifGranted) ->
+        _permissionState,
+        appsStateFlow
+    ) { isConnected, settings, (isNotifAccess, isBatteryIgnored, isPostNotifGranted), appsState ->
+        val mappedApps = appsState.apps.map { app ->
+            app.copy(isRestyled = !settings.disabledPackages.contains(app.packageName))
+        }
+
+        val filteredApps = if (appsState.query.isBlank()) {
+            mappedApps
+        } else {
+            mappedApps.filter {
+                it.appName.contains(appsState.query, ignoreCase = true) ||
+                it.packageName.contains(appsState.query, ignoreCase = true)
+            }
+        }
+
         MainUiState(
             isListenerConnected = isConnected,
             isNotificationAccessGranted = isNotifAccess,
             isBatteryOptimizationIgnored = isBatteryIgnored,
             isPostNotificationsGranted = isPostNotifGranted,
-            settings = settings
+            settings = settings,
+            installedApps = filteredApps,
+            searchQuery = appsState.query,
+            isLoadingApps = appsState.isLoading
         )
     }.stateIn(
         scope = viewModelScope,
@@ -51,6 +89,62 @@ class MainViewModel(
             isPostNotificationsGranted = PermissionUtils.isPostNotificationsGranted(application)
         )
     )
+
+    init {
+        loadInstalledApps()
+    }
+
+    fun loadInstalledApps() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isLoadingApps.value = true
+            val app = getApplication<Application>()
+            val pm = app.packageManager
+            try {
+                val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+                val userApps = packages
+                    .filter {
+                        pm.getLaunchIntentForPackage(it.packageName) != null &&
+                        it.packageName != app.packageName
+                    }
+                    .map { pkg ->
+                        AppInfo(
+                            packageName = pkg.packageName,
+                            appName = pm.getApplicationLabel(pkg).toString(),
+                            icon = try { pm.getApplicationIcon(pkg) } catch (_: Exception) { null },
+                            isRestyled = true
+                        )
+                    }
+                    .sortedBy { it.appName.lowercase() }
+                _rawInstalledApps.value = userApps
+            } catch (_: Exception) {
+                _rawInstalledApps.value = emptyList()
+            } finally {
+                _isLoadingApps.value = false
+            }
+        }
+    }
+
+    fun setSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+
+    fun restyleAllApps() {
+        viewModelScope.launch {
+            val settings = settingsRepository.getLatestSettings()
+            for (pkg in settings.disabledPackages) {
+                settingsRepository.toggleAppRestyle(pkg, restyle = true)
+            }
+        }
+    }
+
+    fun disableAllApps() {
+        viewModelScope.launch {
+            val allPkgs = _rawInstalledApps.value.map { it.packageName }
+            for (pkg in allPkgs) {
+                settingsRepository.toggleAppRestyle(pkg, restyle = false)
+            }
+        }
+    }
 
     fun refreshSystemState() {
         val app = getApplication<Application>()
