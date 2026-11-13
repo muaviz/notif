@@ -29,8 +29,8 @@ object BitmapUtils {
         val width = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth else targetSizePx
         val height = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight else targetSizePx
 
-        val finalWidth = minOf(width, targetSizePx)
-        val finalHeight = minOf(height, targetSizePx)
+        val finalWidth = maxOf(1, minOf(width, targetSizePx))
+        val finalHeight = maxOf(1, minOf(height, targetSizePx))
 
         val bitmap = Bitmap.createBitmap(finalWidth, finalHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)

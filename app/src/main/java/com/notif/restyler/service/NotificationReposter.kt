@@ -43,9 +43,9 @@ class NotificationReposter(
         val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT) ?: text
         val subText = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)
 
-        // 2. Channel Resolution
+        // 2. Channel Resolution (PRIORITY_LOW and below map to silent channel)
         @Suppress("DEPRECATION")
-        val channelId = if (original.priority <= Notification.PRIORITY_MIN) {
+        val channelId = if (original.priority <= Notification.PRIORITY_LOW) {
             NotificationChannels.CHANNEL_SILENT
         } else {
             NotificationChannels.CHANNEL_ALERTING
@@ -62,6 +62,11 @@ class NotificationReposter(
             .setContentIntent(original.contentIntent)
             .setDeleteIntent(original.deleteIntent)
             .setAutoCancel(true)
+
+        // Preserve FLAG_ONLY_ALERT_ONCE to prevent buzzing on in-place updates
+        if ((original.flags and Notification.FLAG_ONLY_ALERT_ONCE) != 0) {
+            builder.setOnlyAlertOnce(true)
+        }
 
         // 4. Timestamp
         val timestamp = if (original.`when` > 0) original.`when` else sbn.postTime
