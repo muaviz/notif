@@ -30,7 +30,11 @@ object PermissionUtils {
      */
     fun isBatteryOptimizationIgnored(context: Context): Boolean {
         val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return false
-        return powerManager.isIgnoringBatteryOptimizations(context.packageName)
+        return try {
+            powerManager.isIgnoringBatteryOptimizations(context.packageName)
+        } catch (_: Throwable) {
+            false
+        }
     }
 
     /**
