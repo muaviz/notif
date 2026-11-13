@@ -7,8 +7,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
+@Config(manifest = Config.NONE)
 class PermissionUtilsTest {
 
     private val testPackage = "com.notif.restyler"
@@ -41,5 +43,13 @@ class PermissionUtilsTest {
         assertEquals(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, intent.action)
         assertEquals("package:$testPackage", intent.dataString)
         assertTrue((intent.flags and Intent.FLAG_ACTIVITY_NEW_TASK) != 0)
+    }
+
+    @Test
+    fun isNotificationAccessGranted_returnsFalseWhenNotGranted() {
+        val context = org.robolectric.RuntimeEnvironment.getApplication()
+        val isGranted = PermissionUtils.isNotificationAccessGranted(context)
+        // By default in fresh test environment, listener is not enabled
+        org.junit.Assert.assertFalse(isGranted)
     }
 }
