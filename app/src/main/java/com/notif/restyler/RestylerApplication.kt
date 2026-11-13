@@ -24,5 +24,6 @@ class RestylerApplication : Application() {
         super.onCreate()
         instance = this
         settingsRepository = DataStoreSettingsRepository(dataStore)
+        com.notif.restyler.service.NotificationChannels.createChannels(this)
     }
 }
