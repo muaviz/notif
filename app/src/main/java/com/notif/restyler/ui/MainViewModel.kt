@@ -25,7 +25,7 @@ private data class AppsState(
     val isLoading: Boolean = false
 )
 
-class MainViewModel(
+class MainViewModel @JvmOverloads constructor(
     application: Application,
     private val settingsRepository: SettingsRepository =
         (application as RestylerApplication).settingsRepository
